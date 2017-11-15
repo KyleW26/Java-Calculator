@@ -8,6 +8,8 @@ package calculator3;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Locale;
 import javax.swing.*;
 import javax.swing.text.DefaultEditorKit;
 
@@ -25,6 +27,7 @@ public class CalculatorFrame {
     public static JMenu edit, view, help;
     public static JMenuItem copy, paste, exit, standard, scientific, digitGrouping, helpItem, aboutCalc;
     public double memory, secondVal, firstVal, percentage;
+    private static DecimalFormat df2 = new DecimalFormat(".###");
 
     public void createFrame() {
 
@@ -73,6 +76,11 @@ public class CalculatorFrame {
         digitGrouping = new JMenuItem("Digit Grouping");
         digitGrouping.setMnemonic(KeyEvent.VK_G);
         digitGrouping.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, ActionEvent.CTRL_MASK));
+        digitGrouping.addActionListener((ActionEvent e) -> {
+            NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
+            String numberAsString = numberFormat.format(result);
+            resultsField.setText(numberAsString);
+        });
 
         // Create my Help menu
         help = new JMenu("Help");
@@ -291,23 +299,23 @@ public class CalculatorFrame {
             secondVal = Double.parseDouble(resultsField.getText());
 
             // Add a percentage on
-            percentage = firstVal+(firstVal*secondVal/100);
+            percentage = firstVal + (firstVal * secondVal / 100);
             result = percentage;
             resultsField.setText(Double.toString(percentage));
-            
+
             // Take away a percentage
-            percentage = firstVal-(firstVal*secondVal/100);
-            result=percentage;
+            percentage = firstVal - (firstVal * secondVal / 100);
+            result = percentage;
             resultsField.setText(Double.toString(percentage));
-            
+
             // Multiply a percentage
-            percentage = firstVal*(firstVal*secondVal/100);
-            result=percentage;
+            percentage = firstVal * (firstVal * secondVal / 100);
+            result = percentage;
             resultsField.setText(Double.toString(percentage));
-            
+
             // Divide a percentage
-            percentage = firstVal/(firstVal*secondVal/100);
-            result=percentage;
+            percentage = firstVal / (firstVal * secondVal / 100);
+            result = percentage;
             resultsField.setText(Double.toString(percentage));
 
             System.out.println(firstVal);
@@ -358,7 +366,7 @@ public class CalculatorFrame {
         button.setForeground(Color.RED);
         rightButtons.add(button);
     }
-    
+
     private void addButton3(String label, ActionListener listener) {
         JButton button = new JButton(label);
         button.addActionListener(listener);
