@@ -13,19 +13,22 @@ import javax.swing.text.DefaultEditorKit;
 
 public class CalculatorFrame {
 
-    double result;
-    JFrame frame;
-    JPanel overallPanel, leftButtons, rightButtons, topButtons, centreButtons, allButtons;
-    JButton one, two, three, four, five, six, seven, eight, nine, zero, add, minus, plusMinus, divide, multiply, equals, dot,
+    public double result;
+    public JFrame frame;
+    public JPanel overallPanel, leftButtons, rightButtons, topButtons, centreButtons, allButtons;
+    public JButton one, two, three, four, five, six, seven, eight, nine, zero, add, minus, plusMinus, divide, multiply, equals, dot,
             mc, mr, ms, mPlus, bs, ce, c, sqrRoot, percent, oneX;
-    JTextField resultsField;
-    boolean start;
-    String lastCommand;
+    public JTextField resultsField;
+    public boolean start, startPercent;
+    public String lastCommand;
     public static JMenuBar menuBar;
     public static JMenu edit, view, help;
     public static JMenuItem copy, paste, exit, standard, scientific, digitGrouping, helpItem, aboutCalc;
+    public double memory, secondVal, firstVal, percentage;
 
     public void createFrame() {
+
+        Calculator calcWorking = new Calculator();
 
         //Create the overall frame and name it
         frame = new JFrame();
@@ -34,7 +37,8 @@ public class CalculatorFrame {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // Set variables
-        result = 0;
+        memory = 0.0;
+        result = calcWorking.getResult();
         start = true;
         lastCommand = "=";
 
@@ -180,26 +184,26 @@ public class CalculatorFrame {
         topButtons = new JPanel();
         topButtons.setLayout(new GridLayout(1, 3, 4, 4));
         topButtons.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 4));
-        
+
         bs = new JButton("BS");
         bs.setForeground(Color.RED);
         bs.addActionListener((ActionEvent e) -> {
             resultsField.setText(resultsField.getText().substring(0, resultsField.getText().length() - 1));
-        }); 
-        
+        });
+
         ce = new JButton("CE");
         ce.setForeground(Color.red);
         ce.addActionListener((ActionEvent e) -> {
             result = 0;
             resultsField.setText(" ");
         });
-        
+
         c = new JButton("C");
         c.setForeground(Color.red);
         c.addActionListener((ActionEvent e) -> {
             resultsField.setText(" ");
         });
-        
+
         topButtons.add(bs);
         topButtons.add(ce);
         topButtons.add(c);
@@ -209,14 +213,33 @@ public class CalculatorFrame {
         // Add the left hand side buttons to the leftPanel
         leftButtons = new JPanel();
         leftButtons.setLayout(new GridLayout(4, 1, 4, 4));
+
         mc = new JButton("MC");
         mc.setForeground(Color.red);
+        mc.addActionListener((ActionEvent e) -> {
+            memory = 0.0;
+            //resultsField.setText(String.format("%.2f", tempResult));
+        });
+
         mr = new JButton("MR");
         mr.setForeground(Color.red);
+        mr.addActionListener((ActionEvent e)
+                -> {
+            resultsField.setText(String.format("%.1f", memory));
+        });
+
         ms = new JButton("MS");
         ms.setForeground(Color.red);
+        ms.addActionListener((ActionEvent e) -> {
+            memory = Double.parseDouble(resultsField.getText());
+        });
+
         mPlus = new JButton("M+");
         mPlus.setForeground(Color.RED);
+        mPlus.addActionListener((ActionEvent e) -> {
+            memory = memory + Double.parseDouble(resultsField.getText());
+        });
+
         leftButtons.add(mc);
         leftButtons.add(mr);
         leftButtons.add(ms);
@@ -230,26 +253,26 @@ public class CalculatorFrame {
         addButton("7", insert);
         addButton("8", insert);
         addButton("9", insert);
-        addButton("/", command);
+        addButton3("/", command);
 
         addButton("4", insert);
         addButton("5", insert);
         addButton("6", insert);
-        addButton("*", command);
+        addButton3("*", command);
 
         addButton("1", insert);
         addButton("2", insert);
         addButton("3", insert);
-        addButton("-", command);
+        addButton3("-", command);
 
         addButton("0", insert);
         centreButtons.add(plusMinus);
         plusMinus.addActionListener((ActionEvent ev2) -> {
-            double tempResult1 = result*= -1;
-            resultsField.setText(String.format("%.2s",tempResult1));
+            double tempResult1 = result *= -1;
+            resultsField.setText(String.format("%.2s", tempResult1));
         });
         addButton(".", insert);
-        addButton("+", command);
+        addButton3("+", command);
         allButtons.add(centreButtons, BorderLayout.CENTER);
 
         // Create the right buttons panel and add in the extra functionality buttons
@@ -260,11 +283,48 @@ public class CalculatorFrame {
         sqrRoot.addActionListener((ActionEvent e) -> {
             double tempResult = Math.sqrt(result);
             resultsField.setText(String.format("%.2f", tempResult));
-        }); 
+        });
         percent = new JButton("%");
         percent.setForeground(Color.BLUE);
+        percent.addActionListener((ActionEvent e) -> {
+            firstVal = result;
+            secondVal = Double.parseDouble(resultsField.getText());
+
+            // Add a percentage on
+            percentage = firstVal+(firstVal*secondVal/100);
+            result = percentage;
+            resultsField.setText(Double.toString(percentage));
+            
+            // Take away a percentage
+            percentage = firstVal-(firstVal*secondVal/100);
+            result=percentage;
+            resultsField.setText(Double.toString(percentage));
+            
+            // Multiply a percentage
+            percentage = firstVal*(firstVal*secondVal/100);
+            result=percentage;
+            resultsField.setText(Double.toString(percentage));
+            
+            // Divide a percentage
+            percentage = firstVal/(firstVal*secondVal/100);
+            result=percentage;
+            resultsField.setText(Double.toString(percentage));
+
+            System.out.println(firstVal);
+            System.out.println(secondVal);
+            System.out.println(percentage);
+        });
+
         oneX = new JButton("1/x");
         oneX.setForeground(Color.BLUE);
+        oneX.addActionListener((ActionEvent e) -> {
+            double number = result;
+            double inverse = 1 / number;
+
+            result = inverse;
+            resultsField.setText(Double.toString(result));
+        });
+
         equals = new JButton("=");
         equals.setForeground(Color.RED);
         rightButtons.add(sqrRoot);
@@ -288,13 +348,22 @@ public class CalculatorFrame {
     private void addButton(String label, ActionListener listener) {
         JButton button = new JButton(label);
         button.addActionListener(listener);
+        button.setForeground(Color.BLUE);
         centreButtons.add(button);
     }
 
     private void addButton2(String label, ActionListener listener) {
         JButton button = new JButton(label);
         button.addActionListener(listener);
+        button.setForeground(Color.RED);
         rightButtons.add(button);
+    }
+    
+    private void addButton3(String label, ActionListener listener) {
+        JButton button = new JButton(label);
+        button.addActionListener(listener);
+        button.setForeground(Color.RED);
+        centreButtons.add(button);
     }
 
     /**
