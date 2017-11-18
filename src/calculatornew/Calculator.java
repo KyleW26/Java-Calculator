@@ -3,7 +3,7 @@
     Dr Dave Perkins
     Create a calculator
  */
-package calculator3;
+package calculatornew;
 
 
 public class Calculator {
@@ -37,6 +37,11 @@ public class Calculator {
     public void setLastOperator(String operator) {
         lastOperator = operator;
     }
+    
+    public double clearResult() {
+        result = 0;
+        return result;
+    }
 
     /**
      * Carries out the pending calculation.
@@ -67,8 +72,6 @@ public class Calculator {
      * @param return calculator state
      */
     public String toString() {
-        return getClass().getSimpleName()
-                + "[result = " + result + ", lastOperator = " + lastOperator
-                + ", start = " + start + "]";
+        return getClass().getSimpleName() + "[result = " + result + ", lastOperator = " + lastOperator + ", start = " + start + "]";
     }
 }
