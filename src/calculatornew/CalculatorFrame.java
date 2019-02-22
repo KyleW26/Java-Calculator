@@ -1,9 +1,13 @@
-package calculatornew;
+/*
+    Kyle Williams - Advanced Java Programming
+    Dr Dave Perkins
+    Create a calculator
+ */
+package calculator3;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.io.File;
-import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
 import javax.swing.*;
@@ -11,34 +15,35 @@ import javax.swing.text.DefaultEditorKit;
 
 public class CalculatorFrame {
 
+    public double result;
     public JFrame frame;
     public JPanel overallPanel, leftButtons, rightButtons, topButtons, centreButtons, allButtons;
-    public JButton one, two, three, four, five, six, seven, eight, nine, zero, add, minus, plusMinus,
-            divide, multiply, equals, dot, mc, mr, ms, mPlus, bs, ce, c, sqrRoot, percent, oneX;
+    public JButton one, two, three, four, five, six, seven, eight, nine, zero, add, minus, plusMinus, divide, multiply, equals, dot,
+            mc, mr, ms, mPlus, bs, ce, c, sqrRoot, percent, oneX;
     public JTextField resultsField;
+    public boolean start, startPercent;
+    public String lastCommand;
     public static JMenuBar menuBar;
     public static JMenu edit, view, help;
     public static JMenuItem copy, paste, exit, standard, scientific, digitGrouping, helpItem, aboutCalc;
-    public double memory, secondVal, firstVal, percentage, convertedStr;
-    Calculator calc = new Calculator();
-
-    public double conversion() {
-        convertedStr = Double.parseDouble(resultsField.getText());
-        return convertedStr;
-    }
+    public double memory, secondVal, firstVal, percentage;
+    private static DecimalFormat df2 = new DecimalFormat(".###");
 
     public void createFrame() {
 
-        ActionListener insert = new InsertActionListener();
-        ActionListener operate = new OperatorActionListener();
+        Calculator calcWorking = new Calculator();
 
         //Create the overall frame and name it
         frame = new JFrame();
+        frame.setSize(350, 240);
         frame.setTitle("Calculator");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Define my vars
+        // Set variables
         memory = 0.0;
+        result = calcWorking.getResult();
+        start = true;
+        lastCommand = "=";
 
         // Create my JMenu Edit Section      
         JMenuBar menuBar = new JMenuBar();
@@ -73,43 +78,61 @@ public class CalculatorFrame {
         digitGrouping.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, ActionEvent.CTRL_MASK));
         digitGrouping.addActionListener((ActionEvent e) -> {
             NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
-            String numberAsString = numberFormat.format(Double.parseDouble(resultsField.getText()));
+            String numberAsString = numberFormat.format(result);
             resultsField.setText(numberAsString);
         });
 
         // Create my Help menu
         help = new JMenu("Help");
+
+        JFrame f2 = new JFrame();
+        f2.setSize(230, 250);
+        f2.setTitle("Basic Help");
+        JPanel helpPanel = new JPanel();
+        JLabel helpTitle = new JLabel("                         Basic Help                         ");
+        JLabel backSpace = new JLabel("BS = BackSpace, Remove last digit");
+        JLabel clearEntry = new JLabel("CE = Clear Entry, Clear to 0");
+        JLabel clear = new JLabel("C = Clear, Clear display");
+        JLabel memClear = new JLabel("MC = Memory Clear");
+        JLabel memRecall = new JLabel("MR = Memory Recall");
+        JLabel MemStore = new JLabel("MS = Memory Store");
+        JLabel memPlus = new JLabel("M+ = Memory Plus");
+        helpPanel.add(helpTitle);
+        helpPanel.add(backSpace);
+        helpPanel.add(clearEntry);
+        helpPanel.add(clear);
+        helpPanel.add(memClear);
+        helpPanel.add(memRecall);
+        helpPanel.add(MemStore);
+        helpPanel.add(memPlus);
+        f2.add(helpPanel);
+
         helpItem = new JMenuItem("Help Topics");
         helpItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_5, ActionEvent.ALT_MASK));
         helpItem.addActionListener((ActionEvent ev) -> {
-            if (Desktop.isDesktopSupported()) {
-                try {
-                    File myFile;
-                    myFile = new File("C:\\Users\\Kyle\\Documents\\Year 2\\ICP 2150 - Advanced Java Programming\\READMECALC.txt");
-                    Desktop.getDesktop().open(myFile);
-                } catch (IOException ex) {
-
-                }
-            }
+            f2.setVisible(true);
         });
 
         aboutCalc = new JMenuItem("About Calculator");
         aboutCalc.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_9, ActionEvent.ALT_MASK));
         aboutCalc.addActionListener((ActionEvent ev) -> {
-            JOptionPane.showMessageDialog(null, "Kyles Calculator v1.6 " + "\n"
-                    + "Stable Build", "About Kyles Calculator", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, "This calculator was created as part of my "
+                    + "Advanced Java Programming Module in Bangor University.", "About my Calculator", JOptionPane.INFORMATION_MESSAGE);
         });
 
         help.add(helpItem);
         help.add(new JSeparator());
         help.add(aboutCalc);
+
         view.add(standard);
         view.add(scientific);
         view.add(new JSeparator());
         view.add(digitGrouping);
+
         menuBar.add(edit);
         menuBar.add(view);
         menuBar.add(help);
+
         frame.setJMenuBar(menuBar);
 
         //Create a panel which will house EVERYTHING in the project
@@ -156,6 +179,10 @@ public class CalculatorFrame {
         dot = new JButton(".");
         dot.setForeground(Color.BLUE);
 
+        // Create both of my action listeners
+        ActionListener insert = new InsertAction();
+        ActionListener command = new CommandAction();
+
         // Create and insert my result text field
         resultsField = new JTextField("0", 23);
         resultsField.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -175,14 +202,14 @@ public class CalculatorFrame {
         ce = new JButton("CE");
         ce.setForeground(Color.red);
         ce.addActionListener((ActionEvent e) -> {
-            calc.clearResult();
-            resultsField.setText("");
+            result = 0;
+            resultsField.setText(" ");
         });
 
         c = new JButton("C");
         c.setForeground(Color.red);
         c.addActionListener((ActionEvent e) -> {
-            resultsField.setText("");
+            resultsField.setText(" ");
         });
 
         topButtons.add(bs);
@@ -204,7 +231,8 @@ public class CalculatorFrame {
 
         mr = new JButton("MR");
         mr.setForeground(Color.red);
-        mr.addActionListener((ActionEvent e) -> {
+        mr.addActionListener((ActionEvent e)
+                -> {
             resultsField.setText(String.format("%.1f", memory));
         });
 
@@ -224,55 +252,35 @@ public class CalculatorFrame {
         leftButtons.add(mr);
         leftButtons.add(ms);
         leftButtons.add(mPlus);
-
         allButtons.add(leftButtons, BorderLayout.WEST);
 
         // Create the centreButtons panel and add all of the standard buttons into it
         centreButtons = new JPanel();
         centreButtons.setLayout(new GridLayout(4, 4, 4, 4));
         centreButtons.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
-        centreButtons.add(seven);
-        seven.addActionListener(insert);
-        centreButtons.add(eight);
-        eight.addActionListener(insert);
-        centreButtons.add(nine);
-        nine.addActionListener(insert);
-        centreButtons.add(divide);
-        divide.addActionListener(operate);
+        addButton("7", insert);
+        addButton("8", insert);
+        addButton("9", insert);
+        addButton3("/", command);
 
-        centreButtons.add(four);
-        four.addActionListener(insert);
-        centreButtons.add(five);
-        five.addActionListener(insert);
-        centreButtons.add(six);
-        six.addActionListener(insert);
-        centreButtons.add(multiply);
-        multiply.addActionListener(operate);
+        addButton("4", insert);
+        addButton("5", insert);
+        addButton("6", insert);
+        addButton3("*", command);
 
-        centreButtons.add(one);
-        one.addActionListener(insert);
-        centreButtons.add(two);
-        two.addActionListener(insert);
-        centreButtons.add(three);
-        three.addActionListener(insert);
-        centreButtons.add(minus);
-        minus.addActionListener(operate);
+        addButton("1", insert);
+        addButton("2", insert);
+        addButton("3", insert);
+        addButton3("-", command);
 
-        centreButtons.add(zero);
-        zero.addActionListener(insert);
+        addButton("0", insert);
         centreButtons.add(plusMinus);
-
         plusMinus.addActionListener((ActionEvent ev2) -> {
-            Double plusMinusDouble = Double.parseDouble(resultsField.getText());
-            plusMinusDouble = plusMinusDouble * -1;
-            resultsField.setText(Double.toString(plusMinusDouble));
+            double tempResult1 = result *= -1;
+            resultsField.setText(String.format("%.2s", tempResult1));
         });
-
-        centreButtons.add(dot);
-        dot.addActionListener(insert);
-        centreButtons.add(add);
-        add.addActionListener(operate);
-
+        addButton(".", insert);
+        addButton3("+", command);
         allButtons.add(centreButtons, BorderLayout.CENTER);
 
         // Create the right buttons panel and add in the extra functionality buttons
@@ -281,98 +289,157 @@ public class CalculatorFrame {
         sqrRoot = new JButton("√");
         sqrRoot.setForeground(Color.BLUE);
         sqrRoot.addActionListener((ActionEvent e) -> {
-            double tempResult = Math.sqrt(Double.parseDouble(resultsField.getText()));
+            double tempResult = Math.sqrt(result);
             resultsField.setText(String.format("%.2f", tempResult));
         });
         percent = new JButton("%");
         percent.setForeground(Color.BLUE);
         percent.addActionListener((ActionEvent e) -> {
-            firstVal = calc.getResult();
+            firstVal = result;
             secondVal = Double.parseDouble(resultsField.getText());
-            secondVal = secondVal / 100;
-            percentage = firstVal + (firstVal * secondVal);
+
+            // Add a percentage on
+            percentage = firstVal + (firstVal * secondVal / 100);
+            result = percentage;
             resultsField.setText(Double.toString(percentage));
+
+            // Take away a percentage
+            percentage = firstVal - (firstVal * secondVal / 100);
+            result = percentage;
+            resultsField.setText(Double.toString(percentage));
+
+            // Multiply a percentage
+            percentage = firstVal * (firstVal * secondVal / 100);
+            result = percentage;
+            resultsField.setText(Double.toString(percentage));
+
+            // Divide a percentage
+            percentage = firstVal / (firstVal * secondVal / 100);
+            result = percentage;
+            resultsField.setText(Double.toString(percentage));
+
+            System.out.println(firstVal);
+            System.out.println(secondVal);
+            System.out.println(percentage);
         });
 
         oneX = new JButton("1/x");
-        oneX.addActionListener(operate);
         oneX.setForeground(Color.BLUE);
+        oneX.addActionListener((ActionEvent e) -> {
+            double number = result;
+            double inverse = 1 / number;
+
+            result = inverse;
+            resultsField.setText(Double.toString(result));
+        });
 
         equals = new JButton("=");
-        equals.addActionListener(operate);
         equals.setForeground(Color.RED);
-
         rightButtons.add(sqrRoot);
         rightButtons.add(percent);
         rightButtons.add(oneX);
-        rightButtons.add(equals);
+        addButton2("=", command);
         allButtons.add(rightButtons, BorderLayout.EAST);
 
         // Add the panel which houses the button to the panel which houses everything and set the frame to visible
         overallPanel.add(allButtons, BorderLayout.CENTER);
         frame.pack();
         frame.setVisible(true);
-
     }
 
     /**
-     * Action Listener to insert digits
+     * Adds a button to the centre panel.
+     *
+     * @param label the button label
+     * @param listener the button listener
      */
-    public class InsertActionListener implements ActionListener {
+    private void addButton(String label, ActionListener listener) {
+        JButton button = new JButton(label);
+        button.addActionListener(listener);
+        button.setForeground(Color.BLUE);
+        centreButtons.add(button);
+    }
 
-        public void actionPerformed(ActionEvent e) {
-            String input = e.getActionCommand();
+    private void addButton2(String label, ActionListener listener) {
+        JButton button = new JButton(label);
+        button.addActionListener(listener);
+        button.setForeground(Color.RED);
+        rightButtons.add(button);
+    }
 
-            if (calc.getStart() == true) {
+    private void addButton3(String label, ActionListener listener) {
+        JButton button = new JButton(label);
+        button.addActionListener(listener);
+        button.setForeground(Color.RED);
+        centreButtons.add(button);
+    }
+
+    /**
+     * This action inserts the button action string to the end of the
+     * resultField text.
+     */
+    private class InsertAction implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent event) {
+            String input = event.getActionCommand();
+            if (start) {
                 resultsField.setText("");
-                calc.setStart(false);
+                start = false;
             }
             resultsField.setText(resultsField.getText() + input);
         }
     }
 
-    public class OperatorActionListener implements ActionListener {
+    /**
+     * This action executes the command that the button action string denotes.
+     */
+    private class CommandAction implements ActionListener {
 
-        public void actionPerformed(ActionEvent e) {
-            String command = e.getActionCommand();
+        @Override
+        public void actionPerformed(ActionEvent event) {
+            String command = event.getActionCommand();
 
-            switch (command) {
-                case "+":
-                    calc.calculate(conversion());
-                    calc.setLastOperator("+");
-                    resultsField.setText("");
-                    break;
-                case "-":
-                    calc.calculate(conversion());
-                    calc.setLastOperator("-");
-                    resultsField.setText("");
-                    break;
-                case "*":
-                    calc.calculate(conversion());
-                    calc.setLastOperator("*");
-                    resultsField.setText("");
-                    break;
-                case "/":
-                    calc.calculate(conversion());
-                    calc.setLastOperator("/");
-                    resultsField.setText("");
-                    break;
-                case "1/x":
-                    calc.setLastOperator("1/x");
-                    calc.calculate(conversion());
-                    resultsField.setText("" + Double.toString(calc.getResult()));
-                    break;
-                case "=":
-                    calc.calculate(conversion());
-                    if (calc.getResult() % 1 == 0) {
-                        resultsField.setText("" + (int) calc.getResult());
-                    } else {
-                        resultsField.setText(String.format("%.2f", calc.getResult()));
-                    }
-                    calc.clearResult();
-                    break;
+            if (start) {
+                if (command.equals("-")) {
+                    resultsField.setText(command);
+                    start = false;
+                } else {
+                    lastCommand = command;
+                }
+            } else {
+                calculate(Double.parseDouble(resultsField.getText()));
+                lastCommand = command;
+                start = true;
             }
         }
+    }
 
+    /**
+     * Carries out the pending calculation.
+     *
+     * @param x the value to be accumulated with the prior result.
+     */
+    public void calculate(double x) {
+        switch (lastCommand) {
+            case "+":
+                result += x;
+                break;
+            case "-":
+                result -= x;
+                break;
+            case "*":
+                result *= x;
+                break;
+            case "/":
+                result /= x;
+                break;
+            case "=":
+                result = x;
+                break;
+            default:
+                break;
+        }
+        resultsField.setText("" + result);
     }
 }
